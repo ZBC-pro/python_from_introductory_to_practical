@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I图片分割工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #dropArea {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 20px;
+        }
+        input[type="file"] {
+            margin: 20px;
+        }
+        button {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        img {
+            margin: 10px;
+            border: 1px solid #ccc;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>图片分割工具</h1>
+    <div id="dropArea">
+        <p>拖入图片或者点击选择本地图片</p>
+        <input type="file" id="imageInput" accept="image/*" class="hidden">
+    </div>
+    <div id="result"></div>
+    <button id="downloadAll" class="hidden">下载图片</button>
+    <canvas id="canvas1" class="hidden"></canvas>
+    <canvas id="canvas2" class="hidden"></canvas>
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const imageInput = document.getElementById('imageInput');
+        const canvas1 = document.getElementById('canvas1');
+        const canvas2 = document.getElementById('canvas2');
+        const resultDiv = document.getElementById('result');
+        const downloadAllButton = document.getElementById('downloadAll');
+
+        dropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropArea.style.borderColor = '#000';
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.borderColor = '#ccc';
+        });
+
+        dropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropArea.style.borderColor = '#ccc';
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                processFile(file);
+            }
+        });
+
+        dropArea.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        });
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const width = img.width;
+                    const height = img.height;
+                    const halfWidth = width / 2;
+
+                    canvas1.width = halfWidth;
+                    canvas1.height = height;
+                    const ctx1 = canvas1.getContext('2d');
+                    ctx1.drawImage(img, 0, 0, halfWidth, height, 0, 0, halfWidth, height);
+
+                    canvas2.width = halfWidth;
+                    canvas2.height = height;
+                    const ctx2 = canvas2.getContext('2d');
+                    ctx2.drawImage(img, halfWidth, 0, halfWidth, height, 0, 0, halfWidth, height);
+
+                    const img1 = new Image();
+                    img1.src = canvas1.toDataURL('image/jpeg');
+                    const link1 = document.createElement('a');
+                    link1.href = img1.src;
+                    link1.download = 'left_half.jpeg';
+                    link1.appendChild(img1);
+
+                    const img2 = new Image();
+                    img2.src = canvas2.toDataURL('image/jpeg');
+                    const link2 = document.createElement('a');
+                    link2.href = img2.src;
+                    link2.download = 'right_half.jpeg';
+                    link2.appendChild(img2);
+
+                    resultDiv.innerHTML = '';
+                    resultDiv.appendChild(link1);
+                    resultDiv.appendChild(link2);
+                    downloadAllButton.classList.remove('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        downloadAllButton.addEventListener('click', function() {
+            const link1 = document.querySelector('a[href="' + canvas1.toDataURL('image/jpeg') + '"]');
+            const link2 = document.querySelector('a[href="' + canvas2.toDataURL('image/jpeg') + '"]');
+
+            if (link1) {
+                link1.click();
+            }
+            if (link2) {
+                link2.click();
+            }
+        });
+    </script>
+</body>
+</html>
